@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Masuk & Pendaftaran - Sekolah Cordova</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; }
+    body { background: #0f172a; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px 16px; color: #f8fafc; }
+    
+    .auth-card { width: 100%; max-width: 440px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 28px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
+    
+    .tab-switcher { display: flex; background: rgba(15, 23, 42, 0.6); padding: 4px; border-radius: 12px; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #94a3b8; font-weight: 700; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { background: #10b981; color: white; }
+    
+    .form-group { text-align: left; margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: #cbd5e1; margin-bottom: 4px; }
+    .input-control { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: white; outline: none; font-size: 0.88rem; }
+    .input-control:focus { border-color: #10b981; }
+    
+    .btn-submit { width: 100%; padding: 12px; background: #10b981; color: white; border: none; font-weight: 700; border-radius: 10px; cursor: pointer; margin-top: 10px; transition: all 0.2s; }
+    .btn-submit:hover { background: #059669; }
+    
+    .form-view { display: none; }
+    .form-view.active { display: block; }
+    
+    .alert { padding: 10px; border-radius: 10px; font-size: 0.82rem; font-weight: 600; display: none; margin-top: 12px; text-align: left; }
+    .alert-error { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .alert-success { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+  </style>
+</head>
+<body>
+
+  <div class="auth-card">
+    <h2 style="margin-bottom: 4px; color: #34d399;">SEKOLAH CORDOVA</h2>
+    <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 20px;">Portal Akses Guru & Staf (TK / SD / SMP)</p>
+
+    <div class="tab-switcher">
+      <button id="tabLoginBtn" class="tab-btn active" onclick="switchTab('login')">Login</button>
+      <button id="tabRegisterBtn" class="tab-btn" onclick="switchTab('register')">Daftar Akun Baru</button>
+    </div>
+
+    <!-- FORM LOGIN -->
+    <form id="loginForm" class="form-view active" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Email / Username Admin</label>
+        <input type="text" id="loginEmail" class="input-control" placeholder="Email atau 'admin'" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" class="input-control" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn-submit">Masuk ke Portal Absensi</button>
+    </form>
+
+    <!-- FORM REGISTRASI -->
+    <form id="registerForm" class="form-view" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label>Nama Lengkap Guru</label>
+        <input type="text" id="regName" class="input-control" placeholder="Budi Santoso, S.Pd" required>
+      </div>
+      
+      <!-- Pilihan Jenjang Sekolah -->
+      <div class="form-group">
+        <label>Jenjang Mengajar</label>
+        <select id="regLevel" class="input-control" required>
+          <option value="TK">TK (Taman Kanak-Kanak)</option>
+          <option value="SD" selected>SD (Sekolah Dasar)</option>
+          <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Posisi / Jabatan</label>
+        <input type="text" id="regPosition" class="input-control" placeholder="Guru Kelas / Wali Kelas" required>
+      </div>
+      <div class="form-group">
+        <label>Email Sekolah</label>
+        <input type="email" id="regEmail" class="input-control" placeholder="email@sekolahcordova.sch.id" required>
+      </div>
+      <div class="form-group">
+        <label>Buat Password</label>
+        <input type="password" id="regPassword" class="input-control" placeholder="••••••••" required>
+      </div>
+      <button type="submit" id="regBtn" class="btn-submit">Daftar Akun Guru</button>
+    </form>
+
+    <div id="authAlert" class="alert"></div>
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.form-view').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      if (tab === 'login') {
+        document.getElementById('loginForm').classList.add('active');
+        document.getElementById('tabLoginBtn').classList.add('active');
+      } else {
+        document.getElementById('registerForm').classList.add('active');
+        document.getElementById('tabRegisterBtn').classList.add('active');
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const regBtn = document.getElementById('regBtn');
+      regBtn.disabled = true;
+      regBtn.innerText = "⏳ Memproses...";
+
+      const payload = {
+        name: document.getElementById("regName").value.trim(),
+        level: document.getElementById("regLevel").value,
+        position: document.getElementById("regPosition").value.trim(),
+        email: document.getElementById("regEmail").value.trim(),
+        password: document.getElementById("regPassword").value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          localStorage.setItem("cordova_user", JSON.stringify(data.userData));
+          alert(`✅ Pendaftaran Berhasil!\nID Anda: ${data.userData.id}\nJenjang: ${data.userData.level}`);
+          window.location.href = "/index.html";
+        } else {
+          showAlert(data.message, "error");
+          regBtn.disabled = false;
+          regBtn.innerText = "Daftar Akun Guru";
+        }
+      } catch (err) {
+        showAlert("Gagal terhubung ke server.", "error");
+        regBtn.disabled = false;
+        regBtn.innerText = "Daftar Akun Guru";
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+
+      const emailInput = document.getElementById("loginEmail").value.trim();
+      const passwordInput = document.getElementById("loginPassword").value.trim();
+
+      if (!emailInput || !passwordInput) {
+        showAlert("Harap isi username/email dan password!", "error");
+        return;
+      }
+
+      const payload = { email: emailInput, password: passwordInput };
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.success && data.userData) {
+          localStorage.setItem("cordova_user", JSON.stringify(data.userData));
+
+          const isAdmin = data.role === 'admin' || 
+                          data.userData.role === 'admin' || 
+                          data.userData.id === 'ADMIN-01' || 
+                          emailInput === 'admin';
+
+          if (isAdmin) {
+            window.location.href = "/untuk_admin.html";
+          } else {
+            window.location.href = "/user.html";
+          }
+        } else {
+          showAlert(data.message || "Email/Username atau Password salah!", "error");
+        }
+      } catch (err) {
+        showAlert("Gagal terhubung ke server. Pastikan server Node.js berjalan.", "error");
+      }
+    }
+
+    function showAlert(msg, type) {
+      const box = document.getElementById("authAlert");
+      if (box) {
+        box.className = `alert alert-${type}`;
+        box.innerText = msg;
+        box.style.display = "block";
+      } else {
+        alert(msg);
+      }
+    }
+  </script>
+</body>
+</html>

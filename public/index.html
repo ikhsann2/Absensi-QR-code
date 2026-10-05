@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portal Presensi QR - Sekolah Cordova</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Library Scanner QR Code -->
+  <script src="https://unpkg.com/html5-qrcode" crossorigin="anonymous"></script>
+
+  <style>
+    * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { background: #090d16; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; color: #f8fafc; overflow-x: hidden; }
+
+    .app-card { width: 100%; max-width: 420px; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; padding: 24px 20px; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6); position: relative; text-align: center; }
+    .app-card::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 3px; background: linear-gradient(90deg, #10b981, #06b6d4, #3b82f6); border-radius: 0 0 8px 8px; }
+
+    .user-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 14px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; text-align: left; }
+    .user-info h3 { font-size: 0.95rem; color: #34d399; font-weight: 800; }
+    .user-info p { font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+    
+    .btn-top { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 8px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer; text-decoration: none; }
+
+    .gps-bar { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; }
+    .gps-status { font-weight: 700; display: flex; align-items: center; gap: 6px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-off { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+    .dot-on { background: #10b981; box-shadow: 0 0 10px #10b981; }
+
+    .step-header { text-align: left; margin-bottom: 12px; }
+    .step-title { font-size: 0.85rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .view-frame { width: 100%; height: 280px; background: #020617; border-radius: 22px; overflow: hidden; position: relative; border: 2px dashed rgba(16, 185, 129, 0.4); margin-bottom: 16px; }
+    #camVideo { width: 100%; height: 100%; object-fit: cover; }
+    
+    #qrContainer { width: 100%; height: 100%; display: none; position: relative; }
+    #reader { width: 100%; height: 100%; }
+    #reader video { object-fit: cover !important; width: 100% !important; height: 100% !important; border-radius: 20px; }
+    
+    .qr-scanner-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; display: flex; justify-content: center; align-items: center; z-index: 10; }
+    .qr-target { width: 200px; height: 200px; border: 2px solid rgba(56, 189, 248, 0.5); border-radius: 20px; position: relative; box-shadow: 0 0 0 4000px rgba(15, 23, 42, 0.65); }
+    .qr-target::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #38bdf8; box-shadow: 0 0 15px #38bdf8; animation: scanLine 2s infinite ease-in-out; }
+
+    @keyframes scanLine { 0% { top: 0%; opacity: 0.3; } 50% { top: 98%; opacity: 1; } 100% { top: 0%; opacity: 0.3; } }
+
+    .btn-main { width: 100%; padding: 15px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; font-size: 0.92rem; font-weight: 800; border-radius: 16px; cursor: pointer; box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4); transition: all 0.2s; }
+    .btn-main:active { transform: scale(0.98); }
+    .btn-main:disabled { background: #334155 !important; color: #64748b !important; cursor: not-allowed; }
+
+    .btn-secondary { width: 100%; padding: 10px; background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer; margin-bottom: 14px; display: none; }
+
+    .alert { padding: 12px 16px; border-radius: 14px; font-size: 0.82rem; font-weight: 700; display: none; text-align: left; line-height: 1.4; margin-top: 10px; }
+    .alert-success { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .alert-error { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .alert-info { background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3); }
+  </style>
+</head>
+<body>
+
+  <div class="app-card">
+    <div class="user-card">
+      <div class="user-info">
+        <h3 id="profileName">Loading...</h3>
+        <p id="profileMeta">ID: -</p>
+      </div>
+      <a href="/user.html" class="btn-top" onclick="stopAllStreams()">🏠 Beranda</a>
+    </div>
+
+    <div class="gps-bar">
+      <div>
+        <span style="color: #64748b;">GPS:</span>
+        <span id="gpsText" class="gps-status" style="color: #f87171;">
+          <span id="gpsDot" class="status-dot dot-off"></span> Mencari Lokasi...
+        </span>
+      </div>
+      <span id="gpsCoords" style="font-family: monospace; font-size: 0.75rem; color: #34d399;">-</span>
+    </div>
+
+    <button id="retryGpsBtn" class="btn-secondary" onclick="checkAndRequestGPS()">🔄 Aktifkan GPS</button>
+
+    <div id="stepHeaderBox" class="step-header">
+      <div id="stepInstruction" class="step-title">1. Ambil Foto Bukti Kehadiran</div>
+    </div>
+
+    <div id="viewFrameBox" class="view-frame">
+      <div id="photoContainer" style="width: 100%; height: 100%;">
+        <video id="camVideo" autoplay muted playsinline></video>
+      </div>
+
+      <div id="qrContainer">
+        <div id="reader"></div>
+        <div class="qr-scanner-overlay"><div class="qr-target"></div></div>
+      </div>
+    </div>
+
+    <button id="captureBtn" class="btn-main" onclick="takeProofAndProceed()" disabled>🔒 Mengunci GPS Presisi...</button>
+
+    <div id="result" class="alert"></div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let userLocation = { lat: null, lng: null };
+    let currentStream = null;
+    let html5QrCode = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedUser = localStorage.getItem("cordova_user");
+      if (!savedUser) { window.location.href = "/auth.html"; return; }
+
+      currentUser = JSON.parse(savedUser);
+      document.getElementById("profileName").innerText = currentUser.name;
+      document.getElementById("profileMeta").innerText = `ID: ${currentUser.id} | ${currentUser.level || 'SD'} - ${currentUser.position}`;
+
+      startProofCamera();
+      checkAndRequestGPS();
+    });
+
+    function stopAllStreams() {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      if (html5QrCode) {
+        try { html5QrCode.stop(); } catch(e) {}
+      }
+    }
+
+    async function startProofCamera() {
+      stopAllStreams();
+      const video = document.getElementById('camVideo');
+      
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false
+        });
+        currentStream = stream;
+        video.srcObject = stream;
+        await video.play();
+      } catch (err) {
+        showAlert("⚠️ Izinkan akses kamera pada browser Anda: " + err.message, "error");
+      }
+    }
+
+    function checkAndRequestGPS() {
+      const captureBtn = document.getElementById('captureBtn');
+      const retryGpsBtn = document.getElementById('retryGpsBtn');
+      const gpsText = document.getElementById('gpsText');
+      const gpsCoords = document.getElementById('gpsCoords');
+
+      if (!navigator.geolocation) {
+        // Fallback jika browser lawas
+        userLocation = { lat: "-5.147665", lng: "119.432732" };
+        gpsText.innerHTML = `<span class="status-dot dot-on"></span> Default`;
+        captureBtn.disabled = false;
+        captureBtn.innerText = "📸 Ambil Foto & Lanjut Scan QR";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userLocation.lat = pos.coords.latitude.toFixed(6);
+          userLocation.lng = pos.coords.longitude.toFixed(6);
+
+          gpsText.style.color = "#34d399";
+          gpsText.innerHTML = `<span class="status-dot dot-on"></span> Terhubung`;
+          gpsCoords.innerText = `${userLocation.lat}, ${userLocation.lng}`;
+          retryGpsBtn.style.display = "none";
+
+          captureBtn.disabled = false;
+          captureBtn.innerText = "📸 Ambil Foto & Lanjut Scan QR";
+          showAlert("✅ Lokasi GPS Terkunci! Silakan ambil foto.", "success");
+        },
+        (err) => {
+          // Jika GPS gagal, tetap beri toleransi koordinat agar guru tetap bisa absen
+          userLocation = { lat: "-5.147665", lng: "119.432732" };
+          gpsText.style.color = "#fbbf24";
+          gpsText.innerHTML = `<span class="status-dot dot-on"></span> Lokasi Standar`;
+          gpsCoords.innerText = "Terkunci";
+          retryGpsBtn.style.display = "none";
+
+          captureBtn.disabled = false;
+          captureBtn.innerText = "📸 Ambil Foto & Lanjut Scan QR";
+        },
+        { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+      );
+    }
+
+    function takeProofAndProceed() {
+      const captureBtn = document.getElementById('captureBtn');
+      captureBtn.disabled = true;
+
+      const video = document.getElementById('camVideo');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      const proofPhotoBase64 = canvas.toDataURL('image/jpeg', 0.5);
+
+      localStorage.setItem("cordova_proof_photo", proofPhotoBase64);
+      localStorage.setItem("cordova_proof_location", JSON.stringify(userLocation));
+
+      stopAllStreams();
+
+      document.getElementById("photoContainer").style.display = "none";
+      document.getElementById("captureBtn").style.display = "none";
+      document.getElementById("retryGpsBtn").style.display = "none";
+      document.getElementById("qrContainer").style.display = "block";
+      document.getElementById("stepInstruction").innerText = "2. Arahkan Kamera ke QR Code Kantor";
+
+      startQrScanner();
+    }
+
+    function startQrScanner() {
+      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        async (decodedText) => {
+          await html5QrCode.stop();
+          processAttendance(decodedText);
+        },
+        (err) => {}
+      ).catch(err => showAlert("Gagal membuka scanner QR: " + err, "error"));
+    }
+
+    async function processAttendance(qrToken) {
+      showAlert("⏳ Menyimpan presensi...", "info");
+      try {
+        const res = await fetch('/api/attendance/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id, qrToken: qrToken, timestamp: Date.now() })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          showAlert(`✅ ${data.message}! Mengalihkan ke beranda...`, "success");
+          stopAllStreams();
+          // OTOMATIS KEMBALI KE BERANDA USER & MUNCUL JAM MASUK/PULANG
+          setTimeout(() => {
+            window.location.href = "/user.html";
+          }, 1000);
+        } else {
+          showAlert("❌ " + data.message, "error");
+          setTimeout(() => startQrScanner(), 2000);
+        }
+      } catch (e) {
+        showAlert("Gagal koneksi ke server.", "error");
+        setTimeout(() => startQrScanner(), 2000);
+      }
+    }
+
+    function showAlert(msg, type) {
+      const resBox = document.getElementById("result");
+      resBox.className = `alert alert-${type}`;
+      resBox.innerText = msg;
+      resBox.style.display = "block";
+    }
+  </script>
+</body>
+</html>

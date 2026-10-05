@@ -1,0 +1,8 @@
+{
+  "name": "Absensi Digital Dynamic",
+  "short_name": "Absensi",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff"
+}

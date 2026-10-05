@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard Absensi - Sekolah Cordova</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; }
+    body { background: #0f172a; color: #f8fafc; min-height: 100vh; padding: 24px; }
+
+    .header-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 20px 28px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .brand-title {
+      font-size: 1.5rem; 
+      font-weight: 800; 
+      background: linear-gradient(90deg, #10b981, #3b82f6); 
+      -webkit-background-clip: text; 
+      background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+    }
+    .brand-sub { font-size: 0.85rem; color: #94a3b8; font-weight: 500; }
+
+    .btn-export { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 12px 22px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3); display: flex; align-items: center; gap: 8px; }
+    .btn-export:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
+
+    .dashboard-grid { display: grid; grid-template-columns: 360px 1fr; gap: 24px; }
+
+    .qr-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 28px; text-align: center; height: fit-content; box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
+    .qr-card h3 { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+    .qr-card p { font-size: 0.8rem; color: #94a3b8; margin-bottom: 20px; }
+
+    .qr-display { background: white; padding: 20px; border-radius: 20px; display: inline-block; box-shadow: 0 0 30px rgba(16, 185, 129, 0.2); border: 4px solid #10b981; }
+    #qrcode img, #qrcode canvas { width: 280px !important; height: 280px !important; margin: 0 auto; display: block; }
+
+    .qr-timer { margin-top: 18px; font-size: 0.8rem; color: #10b981; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+    .table-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); overflow: hidden; }
+    .table-header-title { font-size: 1.2rem; font-weight: 700; color: #f8fafc; margin-bottom: 16px; }
+
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: rgba(15, 23, 42, 0.8); color: #94a3b8; padding: 14px 14px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+    td { padding: 14px 14px; font-size: 0.85rem; color: #e2e8f0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    .status-tag { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; display: inline-block; }
+    .tag-hadir { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .tag-sakit { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .tag-izin { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .tag-lembur { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+
+    .badge-level { padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; }
+    .lvl-tk { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.4); }
+    .lvl-sd { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .lvl-smp { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+
+    @media (max-width: 960px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+      #qrcode img, #qrcode canvas { width: 220px !important; height: 220px !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <div>
+      <h1 class="brand-title">SEKOLAH CORDOVA</h1>
+      <p class="brand-sub">Panel Monitor Absensi Guru (TK / SD / SMP)</p>
+    </div>
+    <button class="btn-export" onclick="exportExcel()">
+      📊 Export Rekap Excel
+    </button>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="qr-card">
+      <h3>AI Dynamic QR Code</h3>
+      <p>Scan menggunakan kamera HP Guru untuk melakukan absensi</p>
+      
+      <div class="qr-display">
+        <div id="qrcode"></div>
+      </div>
+
+      <div class="qr-timer">
+        🔄 QR Code diperbarui otomatis
+      </div>
+    </div>
+
+    <div class="table-card">
+      <h2 class="table-header-title">Data Kehadiran Hari Ini</h2>
+      
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>ID Guru</th>
+              <th>Nama Lengkap</th>
+              <th>Jenjang</th>
+              <th>Jabatan</th>
+              <th>Tanggal</th>
+              <th>Masuk</th>
+              <th>Pulang</th>
+              <th>Jam Kerja</th>
+              <th>Status</th>
+              <th>Keterangan</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let qrcode = new QRCode(document.getElementById("qrcode"), { 
+      width: 280, 
+      height: 280,
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    async function updateQRCode() {
+      try {
+        const res = await fetch('/api/qr/generate');
+        const data = await res.json();
+        qrcode.clear();
+        qrcode.makeCode(data.qrPayload || data.qrToken);
+      } catch (err) {}
+    }
+
+    async function loadLogs() {
+      try {
+        // Layar monitor selalu memanggil endpoint default (hari ini saja)
+        const res = await fetch('/api/admin/logs');
+        const data = await res.json();
+        
+        const logs = data.logs || (Array.isArray(data) ? data : []);
+        const tbody = document.getElementById('attendanceTable');
+        tbody.innerHTML = '';
+
+        if (!logs || logs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#94a3b8; padding:20px;">Belum ada data absensi hari ini.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = logs.map(log => {
+          const statusText = log.status || 'Hadir';
+          const lvl = log.level || 'SD';
+          const isOver = log.isOvertime === 1;
+          
+          let statusClass = 'tag-hadir';
+          if (statusText === 'Sakit') statusClass = 'tag-sakit';
+          else if (statusText === 'Izin') statusClass = 'tag-izin';
+
+          return `
+            <tr>
+              <td><strong>${log.userId}</strong></td>
+              <td><b>${log.name}</b></td>
+              <td><span class="badge-level lvl-${lvl.toLowerCase()}">${lvl}</span></td>
+              <td>${log.position}</td>
+              <td>${log.date}</td>
+              <td>${log.checkIn || '-'}</td>
+              <td>${log.checkOut || '-'}</td>
+              <td><b>${log.workHours || 0} Jam</b></td>
+              <td>
+                <span class="status-tag ${statusClass}">
+                  ${statusText}
+                </span>
+                ${isOver ? `<span class="status-tag tag-lembur">⚡ LEMBUR</span>` : ''}
+              </td>
+              <td>
+                <span style="font-size:0.75rem; color:#94a3b8;">${log.reason || '-'}</span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {}
+    }
+
+    function exportExcel() {
+      window.location.href = '/api/admin/export-excel';
+    }
+
+    setInterval(updateQRCode, 5000);
+    setInterval(loadLogs, 3000);
+
+    updateQRCode();
+    loadLogs();
+  </script>
+</body>
+</html>

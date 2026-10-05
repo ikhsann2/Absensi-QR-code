@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portal Guru - Sekolah Cordova</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { background: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; color: #0f172a; }
+
+    .app-card { width: 100%; max-width: 420px; background: #ffffff; border-radius: 28px; padding: 24px 20px; box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; }
+
+    /* Header Profile Card Biru */
+    .user-profile-card { background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #38bdf8 100%); border-radius: 20px; padding: 20px; color: white; margin-bottom: 20px; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.35); position: relative; overflow: hidden; }
+    .user-profile-card::after { content: ''; position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: none; }
+    
+    .profile-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .badge-level { background: rgba(255,255,255,0.25); backdrop-filter: blur(8px); padding: 4px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
+    .btn-logout { background: rgba(239, 68, 68, 0.2); color: #fee2e2; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+    
+    .profile-name { font-size: 1.15rem; font-weight: 800; line-height: 1.2; margin-bottom: 4px; }
+    .profile-meta { font-size: 0.8rem; color: #e0f2fe; font-weight: 500; }
+
+    /* Card Jam Masuk & Pulang Hari Ini */
+    .time-status-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+    .time-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 16px; text-align: left; }
+    .time-card h5 { font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+    .time-value { font-size: 1.15rem; font-weight: 800; color: #0f172a; }
+
+    /* Grid Menu Utama */
+    .menu-title { font-size: 0.85rem; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; text-align: left; }
+    .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    
+    .menu-item { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 16px 14px; text-align: left; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between; min-height: 105px; }
+    .menu-item:active { transform: scale(0.97); }
+    .menu-item:hover { border-color: #38bdf8; box-shadow: 0 8px 16px -4px rgba(56, 189, 248, 0.15); }
+    
+    .item-icon { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 10px; }
+    .icon-absen { background: #ecfdf5; color: #10b981; }
+    .icon-lembur { background: #eff6ff; color: #2563eb; }
+    .icon-izin { background: #f0fdf4; color: #16a34a; }
+    .icon-sakit { background: #fffbeb; color: #d97706; }
+
+    .item-title { font-size: 0.85rem; font-weight: 800; color: #1e293b; margin-bottom: 2px; }
+    .item-desc { font-size: 0.7rem; color: #94a3b8; font-weight: 500; }
+
+    /* Modals */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 100; padding: 16px; }
+    .modal-box { background: #ffffff; padding: 22px; border-radius: 24px; width: 100%; max-width: 390px; text-align: left; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+    .cam-box { width: 100%; height: 210px; background: #000; border-radius: 16px; overflow: hidden; margin: 12px 0; border: 2px dashed #38bdf8; }
+    video { width: 100%; height: 100%; object-fit: cover; }
+
+    .input-control { width: 100%; padding: 12px 14px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; color: #0f172a; font-size: 0.85rem; outline: none; margin-bottom: 12px; }
+    .input-control:focus { border-color: #2563eb; background: #ffffff; }
+
+    .btn-submit { width: 100%; padding: 13px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 0.88rem; color: white; transition: all 0.2s; margin-bottom: 8px; }
+    .btn-submit:active { transform: scale(0.98); }
+    .btn-blue { background: #2563eb; box-shadow: 0 6px 16px -4px rgba(37, 99, 235, 0.4); }
+    .btn-amber { background: #d97706; box-shadow: 0 6px 16px -4px rgba(217, 119, 6, 0.4); }
+    .btn-cancel { background: #f1f5f9; color: #64748b; }
+  </style>
+</head>
+<body>
+
+  <div class="app-card">
+    <div class="user-profile-card">
+      <div class="profile-top">
+        <span id="uLevel" class="badge-level">JENJANG -</span>
+        <button class="btn-logout" onclick="logout()">Keluar</button>
+      </div>
+      <div id="uName" class="profile-name">Memuat Profil...</div>
+      <div id="uMeta" class="profile-meta">ID Guru: - | -</div>
+    </div>
+
+    <!-- Live Status Check-In & Check-Out Hari Ini -->
+    <div class="time-status-container">
+      <div class="time-card">
+        <h5>🟢 Jam Masuk</h5>
+        <div id="checkInTime" class="time-value">--:--</div>
+      </div>
+      <div class="time-card">
+        <h5>🔴 Jam Pulang</h5>
+        <div id="checkOutTime" class="time-value">--:--</div>
+      </div>
+    </div>
+
+    <div class="menu-title">Menu Presensi & Pengajuan</div>
+
+    <div class="menu-grid">
+      <div class="menu-item" onclick="window.location.href='/index.html'">
+        <div class="item-icon icon-absen">📸</div>
+        <div>
+          <div class="item-title">Presensi QR</div>
+          <div class="item-desc">Masuk / Pulang kerja</div>
+        </div>
+      </div>
+
+      <div class="menu-item" onclick="openLemburModal()">
+        <div class="item-icon icon-lembur">⚡</div>
+        <div>
+          <div class="item-title">Pengajuan Lembur</div>
+          <div class="item-desc">Foto & info tugas lembur</div>
+        </div>
+      </div>
+
+      <div class="menu-item" onclick="openIzinModal()">
+        <div class="item-icon icon-izin">📝</div>
+        <div>
+          <div class="item-title">Pengajuan Izin</div>
+          <div class="item-desc">Izin dinas / keperluan</div>
+        </div>
+      </div>
+
+      <div class="menu-item" onclick="openSakitModal()">
+        <div class="item-icon icon-sakit">📄</div>
+        <div>
+          <div class="item-title">Surat Sakit</div>
+          <div class="item-desc">Unggah surat dokter</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PENGAJUAN LEMBUR -->
+  <div id="lemburModal" class="modal">
+    <div class="modal-box">
+      <h3 style="color:#2563eb; margin-bottom: 4px;">⚡ Pengajuan Lembur Guru</h3>
+      <p style="font-size: 0.75rem; color:#64748b; margin-bottom: 8px;">Ambil foto dokumentasi & isi kegiatan lembur Anda.</p>
+      
+      <div class="cam-box"><video id="lemburCam" autoplay muted playsinline></video></div>
+      
+      <label style="font-size: 0.78rem; font-weight:700; color:#334155;">Keterangan Kegiatan Lembur:</label>
+      <textarea id="lemburReason" class="input-control" rows="3" placeholder="Contoh: Koreksi ujian semester..." required></textarea>
+      
+      <button id="btnSendLembur" class="btn-submit btn-blue" onclick="captureAndSendLembur()">📸 Ambil Foto & Ajukan Lembur</button>
+      <button class="btn-submit btn-cancel" onclick="closeLemburModal()">Batal</button>
+    </div>
+  </div>
+
+  <!-- MODAL PENGAJUAN IZIN -->
+  <div id="izinModal" class="modal">
+    <div class="modal-box">
+      <h3 style="color:#16a34a; margin-bottom: 4px;">📝 Form Pengajuan Izin</h3>
+      <p style="font-size: 0.75rem; color:#64748b; margin-bottom: 8px;">Ambil foto dokumentasi & isi alasan izin Anda.</p>
+      
+      <div class="cam-box" style="border-color:#16a34a;"><video id="izinCam" autoplay muted playsinline></video></div>
+      
+      <label style="font-size: 0.78rem; font-weight:700; color:#334155;">Alasan Izin:</label>
+      <textarea id="izinReason" class="input-control" rows="3" placeholder="Contoh: Mengikuti pelatihan kedinasan..." required></textarea>
+      
+      <button id="btnSendIzin" class="btn-submit btn-blue" style="background:#16a34a;" onclick="captureAndSendIzin()">📸 Ambil Foto & Kirim Izin</button>
+      <button class="btn-submit btn-cancel" onclick="closeIzinModal()">Batal</button>
+    </div>
+  </div>
+
+  <!-- MODAL SURAT SAKIT -->
+  <div id="sakitModal" class="modal">
+    <div class="modal-box">
+      <h3 style="color:#d97706; margin-bottom: 4px;">📄 Foto Surat Sakit</h3>
+      <p style="font-size: 0.75rem; color:#64748b; margin-bottom: 8px;">Arahkan kamera ke surat keterangan dokter.</p>
+      
+      <div class="cam-box" style="border-color:#d97706;"><video id="sakitCam" autoplay muted playsinline></video></div>
+      <button id="btnSendSakit" class="btn-submit btn-amber" onclick="captureAndSendSakit()">📸 Ambil Foto & Kirim</button>
+      <button class="btn-submit btn-cancel" onclick="closeSakitModal()">Batal</button>
+    </div>
+  </div>
+
+  <script>
+    let uData = null;
+    let activeStream = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const saved = localStorage.getItem("cordova_user");
+      if (!saved) { window.location.href = "/auth.html"; return; }
+      uData = JSON.parse(saved);
+      document.getElementById("uName").innerText = uData.name;
+      document.getElementById("uLevel").innerText = `JENJANG ${uData.level || 'SD'}`;
+      document.getElementById("uMeta").innerText = `ID: ${uData.id} | ${uData.position}`;
+
+      loadTodayAttendance();
+      // Auto-refresh data kehadiran setiap 3 detik
+      setInterval(loadTodayAttendance, 3000);
+    });
+
+    function stopActiveCamera() {
+      if (activeStream) {
+        activeStream.getTracks().forEach(t => t.stop());
+        activeStream = null;
+      }
+    }
+
+    async function loadTodayAttendance() {
+      try {
+        const res = await fetch(`/api/user/today-status?userId=${uData.id}`);
+        const data = await res.json();
+        if (data.success && data.log) {
+          document.getElementById("checkInTime").innerText = data.log.check_in || '--:--';
+          document.getElementById("checkOutTime").innerText = (data.log.check_out && data.log.check_out !== '-') ? data.log.check_out : '--:--';
+        } else {
+          document.getElementById("checkInTime").innerText = '--:--';
+          document.getElementById("checkOutTime").innerText = '--:--';
+        }
+      } catch (e) {}
+    }
+
+    // Modal Lembur
+    async function openLemburModal() {
+      stopActiveCamera();
+      document.getElementById("lemburModal").style.display = "flex";
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        activeStream = stream;
+        const video = document.getElementById("lemburCam");
+        video.srcObject = stream;
+        await video.play();
+      } catch(err) {
+        alert("Gagal membuka kamera: " + err.message);
+      }
+    }
+    function closeLemburModal() {
+      stopActiveCamera();
+      document.getElementById("lemburModal").style.display = "none";
+    }
+    async function captureAndSendLembur() {
+      const reason = document.getElementById("lemburReason").value.trim();
+      if (!reason) { alert("Harap isi keterangan kegiatan lembur!"); return; }
+
+      const btn = document.getElementById("btnSendLembur");
+      btn.disabled = true;
+      btn.innerText = "⏳ Memproses...";
+
+      const video = document.getElementById("lemburCam");
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL("image/jpeg", 0.6);
+
+      try {
+        const res = await fetch('/api/user/lembur', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: uData.id, docBase64: base64, reason: reason })
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert(`✅ ${result.message}`);
+          closeLemburModal();
+          loadTodayAttendance();
+        } else {
+          alert("❌ " + result.message);
+        }
+      } catch (err) {
+        alert("Gagal koneksi ke server.");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "📸 Ambil Foto & Ajukan Lembur";
+      }
+    }
+
+    // Modal Izin
+    async function openIzinModal() {
+      stopActiveCamera();
+      document.getElementById("izinModal").style.display = "flex";
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        activeStream = stream;
+        const video = document.getElementById("izinCam");
+        video.srcObject = stream;
+        await video.play();
+      } catch(err) {
+        alert("Gagal membuka kamera: " + err.message);
+      }
+    }
+    function closeIzinModal() {
+      stopActiveCamera();
+      document.getElementById("izinModal").style.display = "none";
+    }
+    async function captureAndSendIzin() {
+      const reason = document.getElementById("izinReason").value.trim();
+      if (!reason) { alert("Harap isi alasan izin!"); return; }
+
+      const video = document.getElementById("izinCam");
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL("image/jpeg", 0.6);
+
+      const res = await fetch('/api/user/izin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uData.id, docBase64: base64, reason: reason })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("✅ Izin berhasil dikirim ke Admin!");
+        closeIzinModal();
+        loadTodayAttendance();
+      }
+    }
+
+    // Modal Sakit
+    async function openSakitModal() {
+      stopActiveCamera();
+      document.getElementById("sakitModal").style.display = "flex";
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+        activeStream = stream;
+        const video = document.getElementById("sakitCam");
+        video.srcObject = stream;
+        await video.play();
+      } catch(err) {
+        alert("Gagal membuka kamera: " + err.message);
+      }
+    }
+    function closeSakitModal() {
+      stopActiveCamera();
+      document.getElementById("sakitModal").style.display = "none";
+    }
+    async function captureAndSendSakit() {
+      const video = document.getElementById("sakitCam");
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL("image/jpeg", 0.6);
+
+      const res = await fetch('/api/user/sakit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uData.id, docBase64: base64 })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("✅ Surat sakit berhasil dikirim ke Admin!");
+        closeSakitModal();
+        loadTodayAttendance();
+      }
+    }
+
+    function logout() {
+      stopActiveCamera();
+      localStorage.removeItem("cordova_user");
+      window.location.href = "/auth.html";
+    }
+  </script>
+</body>
+</html>
